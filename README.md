@@ -53,7 +53,7 @@ curl -X POST "http://[your host IP]/upload-file/" -F "file=@[/path/to/your/file]
 
 check uploaded file:
 ```bash
-curl http://[your host IP]/files/test1.jpg
+curl http://[your host IP]/files/[your file name]
 ```
 
 
