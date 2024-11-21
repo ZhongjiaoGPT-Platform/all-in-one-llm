@@ -5,11 +5,13 @@ COMPOSE_PROJECT_NAME=all-in-one-llm
 MODEL_PATH=/home/tzm/tzm/models
 
 LLM_1GPU_REPLICAS=0
-LLM_2GPU_REPLICAS=1
-LLM_4GPU_REPLICAS=0
+LLM_2GPU_REPLICAS=0
+LLM_4GPU_REPLICAS=1
 ALM_REPLICAS=0
-ASR_REPLICAS=1
+ASR_REPLICAS=0
 CODE_LLM_REPLICAS=0
+EMB_REPLICAS=0
+VLM_REPLICAS=0
 
 # # to protect the API, you can set a secret key (optional)
 # API_KEY=mysecretkey # comment this line to disable the API key (empty value does not work)
