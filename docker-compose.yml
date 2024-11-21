@@ -16,6 +16,8 @@ services:
       - ALM_REPLICAS=${ALM_REPLICAS}
       - ASR_REPLICAS=${ASR_REPLICAS}
       - CODE_LLM_REPLICAS=${CODE_LLM_REPLICAS}
+      - EMB_REPLICAS=${EMB_REPLICAS}
+      - VLM_REPLICAS=${VLM_REPLICAS}
     # expose:
     #   - 8000
     ports:
@@ -46,7 +48,8 @@ services:
       - "8022:8022"
     command: zsh -c "zsh app/start_qwen2_vl_7B.sh"
     restart: always
-
+    deploy:
+      replicas: ${VLM_REPLICAS:-0}
 
   llm-qwen2_5-7b:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -156,5 +159,6 @@ services:
       - "8112:8112"
     command: zsh -c "zsh app/start_gte_qwen2_7B.sh"
     restart: always
-
+    deploy:
+      replicas: ${EMB_REPLICAS:-0}
 

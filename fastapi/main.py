@@ -23,6 +23,8 @@ llm_4gpu_replicas = int(os.getenv('LLM_4GPU_REPLICAS', '0') or '0')
 alm_replicas = int(os.getenv('ALM_REPLICAS', '0') or '0')
 code_llm_replicas = int(os.getenv('CODE_LLM_REPLICAS', '0') or '0')
 whisper_replicas = int(os.getenv('ASR_REPLICAS', '0') or '0')
+vlm_replicas = int(os.getenv('VLM_REPLICAS', '0') or '0')
+emb_replicas = int(os.getenv('EMB_REPLICAS', '0') or '0')
 
 print("################################")
 print("llm_1gpu_replicas", llm_1gpu_replicas)
@@ -31,6 +33,8 @@ print("llm_4gpu_replicas", llm_4gpu_replicas)
 print("alm_replicas", alm_replicas)
 print("code_llm_replicas", code_llm_replicas)
 print("whisper_replicas", whisper_replicas)
+print("vlm_replicas", vlm_replicas)
+print("emb_replicas", emb_replicas)
 print("################################")
 
 if llm_1gpu_replicas > 0:
@@ -80,6 +84,7 @@ async def upload_file(file: UploadFile = File(...)):
         f.write(await file.read())
     return {"info": f"File '{file.filename}' uploaded successfully.", "url": f"/files/{file.filename}"}
 
+
 @app.get("/files/{filename}")
 async def get_file(filename: str):
     file_path = os.path.join(UPLOAD_DIRECTORY, filename)
@@ -91,40 +96,51 @@ async def get_file(filename: str):
 
 @app.get("/health")
 def health_check(request: Request, api_key: str = Security(check_api_key)) -> Response:
-    """
-    Health check of vLLM model and embedding embeddings.
-    """
-    response = requests.get(f"{LLM_URL}/health")
-    llm_status = response.status_code
+    """Health check for multiple services based on replica counts."""
 
-    response = requests.get(f"{VLM_URL}/health")
-    vlm_status = response.status_code
+    def check_service_health(url: str) -> bool:
+        """Helper function to check the health of a service."""
+        try:
+            response = requests.get(f"{url}/health", timeout=5)
+            return response.status_code == 200
+        except requests.RequestException:
+            return False
 
-    response = requests.get(f"{EMB_URL}/health")
-    emb_status = response.status_code
+    def check_service_accessible(url: str) -> bool:
+        """Check if a service is accessible (ping/curl-like logic)."""
+        try:
+            response = requests.get(url, timeout=5)
+            return response.status_code in {200, 403}  # Assuming accessible if it responds
+        except requests.RequestException:
+            return False
 
-    if alm_replicas:
-        response = requests.get(f"{ALM_URL}/health")
-        alm_status = response.status_code
+    # Map services to their replica counts and URLs
+    services = {
+        "LLM": {
+            "replicas": llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas,
+            "url": LLM_URL,
+            "check_health": True,
+        },
+        "VLM": {"replicas": vlm_replicas, "url": VLM_URL, "check_health": True},
+        "EMB": {"replicas": emb_replicas, "url": EMB_URL, "check_health": True},
+        "ALM": {"replicas": alm_replicas, "url": ALM_URL, "check_health": True},
+        "ASR": {"replicas": whisper_replicas, "url": ASR_URL, "check_health": False},  # Check accessibility only
+    }
 
-    if whisper_replicas:
-        response = requests.get(f"{ASR_URL}")
-        asr_status = response.status_code
+    # Check health or accessibility for each service with replicas > 0
+    for service, info in services.items():
+        if info["replicas"] > 0:
+            if info["check_health"]:
+                # Perform health check
+                if not check_service_health(info["url"]):
+                    return Response(status_code=500)
+            else:
+                # Perform accessibility check for ASR
+                if not check_service_accessible(info["url"]):
+                    return Response(status_code=500)
 
-    if llm_status == 200 and vlm_status == 200 and emb_status == 200:
-        if alm_replicas and whisper_replicas:
-            if alm_status == 200 and asr_status == 200:
-                return Response(status_code=200)
-        elif alm_replicas:
-            if alm_status == 200:
-                return Response(status_code=200)
-        elif whisper_replicas:
-            if asr_status == 200:
-                return Response(status_code=200)
-        else:
-            return Response(status_code=200)
-    else:
-        return Response(status_code=500)
+    # All required services are healthy
+    return Response(status_code=200)
 
 
 @app.get("/v1/models/{model}", tags=["OpenAI"])
@@ -135,56 +151,46 @@ def get_models(
     """
     Show available models
     """
+    def fetch_model_info(url: str, headers: Optional[dict], model_type: str, owner: str, created: Optional[int] = None) -> dict:
+        """Fetch and format model information from a service."""
+        try:
+            response = requests.get(url, headers=headers).json()
+            return {
+                "id": response["data"][0]["id"],
+                "object": "model",
+                "owned_by": owner,
+                "created": created or response["data"][0]["created"],
+                "type": model_type,
+            }
+        except Exception:
+            return None
+
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else None
-    llm_model = requests.get(f"{LLM_URL}/v1/models", headers=headers).json()
-    vlm_model = requests.get(f"{VLM_URL}/v1/models", headers=headers).json()
-    emb_model = requests.get(f"{EMB_URL}/v1/models", headers=headers).json()
 
-    if alm_replicas:
-        alm_model = requests.get(f"{ALM_URL}/v1/models", headers=headers).json()
+    # Initialize models dynamically based on replicas
+    models = []
 
-    llm_model_data = {
-        "id": llm_model["data"][0]["id"],
-        "object": "model",
-        "owned_by": "vllm",
-        "created": llm_model["data"][0]["created"],
-        "type": "text-generation",
-    }
+    if llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas > 0:
+        llm_model_data = fetch_model_info(f"{LLM_URL}/v1/models", headers, "text-generation", "vllm")
+        if llm_model_data:
+            models.append(llm_model_data)
 
-    vlm_model_data = {
-        "id": vlm_model["data"][0]["id"],
-        "object": "model",
-        "owned_by": "vllm",
-        "created": vlm_model["data"][0]["created"],
-        "type": "image-text-inference",
-    }
+    if vlm_replicas > 0:
+        vlm_model_data = fetch_model_info(f"{VLM_URL}/v1/models", headers, "image-text-inference", "vllm")
+        if vlm_model_data:
+            models.append(vlm_model_data)
 
-    emb_model_data = {
-        "id": emb_model["data"][0]["id"],
-        "object": "model",
-        "owned_by": "sglang",
-        "created": round(time.time()),
-        "type": "text-embeddings-inference",
-    }
+    if emb_replicas > 0:
+        emb_model_data = fetch_model_info(f"{EMB_URL}/v1/models", headers, "text-embeddings-inference", "sglang", created=round(time.time()))
+        if emb_model_data:
+            models.append(emb_model_data)
 
-    if alm_replicas:
-        alm_model_data = {
-            "id": alm_model["data"][0]["id"],
-            "object": "model",
-            "owned_by": "vllm",
-            "created": alm_model["data"][0]["created"],
-            "type": "audio-text-inference",
-        }
-    else:
-        alm_model_data = {
-            "id": "None",
-            "object": "model",
-            "owned_by": "None",
-            "created": 0,
-            "type": "audio-text-inference",
-        }
+    if alm_replicas > 0:
+        alm_model_data = fetch_model_info(f"{ALM_URL}/v1/models", headers, "audio-text-inference", "vllm")
+        if alm_model_data:
+            models.append(alm_model_data)
 
-    if whisper_replicas:
+    if whisper_replicas > 0:
         asr_model_data = {
             "id": "whisper",
             "object": "model",
@@ -192,37 +198,19 @@ def get_models(
             "created": round(time.time()),
             "type": "audio-text-inference",
         }
-    else:
-        asr_model_data = {
-            "id": "None",
-            "object": "model",
-            "owned_by": "None",
-            "created": 0,
-            "type": "audio-text-inference",
-        }
+        models.append(asr_model_data)
 
-
+    # If a specific model is requested
     if model is not None:
-        # support double encoding for model ID with "/" character
+        # Support double encoding for model ID with "/" character
         model = urllib.parse.unquote(urllib.parse.unquote(model))
-        if model not in [llm_model_data["id"], vlm_model_data["id"],
-                         emb_model_data["id"], alm_model_data["id"], asr_model_data["id"]]:
-            raise HTTPException(status_code=404, detail="Model not found")
+        for model_data in models:
+            if model == model_data["id"]:
+                return model_data
+        raise HTTPException(status_code=404, detail="Model not found")
 
-        if model == llm_model_data["id"]:
-            return llm_model_data
-        elif model == vlm_model_data["id"]:
-            return vlm_model_data
-        elif model == alm_model_data["id"]:
-            return alm_model_data
-        elif model == asr_model_data["id"]:
-            return asr_model_data
-        else:
-            return emb_model_data
-
-    response = {"object": "list", "data": [llm_model_data, vlm_model_data, emb_model_data, alm_model_data, asr_model_data]}
-
-    return response
+    # Return all available models
+    return {"object": "list", "data": models}
 
 
 @app.post("/v1/embeddings", tags=["OpenAI"])
