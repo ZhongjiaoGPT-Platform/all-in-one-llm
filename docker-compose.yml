@@ -99,9 +99,9 @@ services:
       replicas: ${LLM_4GPU_REPLICAS:-0}
 
 
-  llm-qwen2_5-code-7b:
+  llm-qwen2_5-code:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
-    container_name: llm-qwen2_5-code-7b
+    container_name: llm-qwen2_5-code
     runtime: nvidia
     ipc: host
     volumes:
@@ -109,7 +109,7 @@ services:
       - ./deploy_script:/app
     ports:
       - "8012:8012"
-    command: zsh -c "zsh app/start_qwen2_5_code_7B.sh"
+    command: zsh -c "${CODE_LLM_COMMAND:-zsh app/start_qwen2_5_code_7B.sh}"
     restart: always
     deploy:
       replicas: ${CODE_LLM_REPLICAS:-0}

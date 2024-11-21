@@ -44,7 +44,7 @@ elif llm_2gpu_replicas > 0:
 elif llm_4gpu_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-72b-int4:8012"
 elif code_llm_replicas > 0:
-    LLM_URL = "http://llm-qwen2_5-code-7b:8012"
+    LLM_URL = "http://llm-qwen2_5-code:8012"
 else:
     LLM_URL = "http://localhost:8012"
 
