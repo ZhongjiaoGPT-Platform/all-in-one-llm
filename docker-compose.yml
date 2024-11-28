@@ -46,7 +46,7 @@ services:
       - ./deploy_script:/app
     ports:
       - "8022:8022"
-    command: zsh -c "zsh app/start_qwen2_vl_7B.sh"
+    command: zsh -c "${VLM_COMMAND:-zsh app/start_qwen2_vl_7B.sh}"
     restart: always
     deploy:
       replicas: ${VLM_REPLICAS:-0}
