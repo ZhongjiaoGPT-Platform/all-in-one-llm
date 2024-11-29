@@ -8,11 +8,14 @@ LLM_1GPU_REPLICAS=0
 LLM_2GPU_REPLICAS=0
 LLM_4GPU_REPLICAS=0
 ALM_REPLICAS=0
-ASR_REPLICAS=0
+ASR_REPLICAS=1
 CODE_LLM_REPLICAS=1
 CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_34B_awq.sh
-EMB_REPLICAS=0
-VLM_REPLICAS=0
+# CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_7B.sh
+EMB_REPLICAS=1
+VLM_REPLICAS=1
+VLM_COMMAND=zsh app/start_qwen2_vl_7B.sh
+# VLM_COMMAND=zsh app/start_qwen2_vl_72B_int4.sh
 
 # # to protect the API, you can set a secret key (optional)
 # API_KEY=mysecretkey # comment this line to disable the API key (empty value does not work)
