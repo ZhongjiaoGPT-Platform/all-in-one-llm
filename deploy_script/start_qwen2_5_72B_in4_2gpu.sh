@@ -13,4 +13,8 @@ CUDA_VISIBLE_DEVICES=2,3 vllm serve /models/llm/Qwen/Qwen2___5-72B-Instruct-GPTQ
 --gpu-memory-utilization 1 \
 --max-model-len 9800 \
 --enforce-eager \
---tensor-parallel-size 2
+--tensor-parallel-size 2 \
+--enable-auto-tool-choice \
+--tool-call-parser hermes \
+--chat-template /models/llm/Qwen/template.jinja
+
