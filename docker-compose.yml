@@ -18,8 +18,7 @@ services:
       - CODE_LLM_REPLICAS=${CODE_LLM_REPLICAS}
       - EMB_REPLICAS=${EMB_REPLICAS}
       - VLM_REPLICAS=${VLM_REPLICAS}
-    # expose:
-    #   - 8000
+      - QWQ_REPLICAS=${QWQ_REPLICAS}
     ports:
       - 8000:8000
     restart: always
@@ -50,6 +49,7 @@ services:
     restart: always
     deploy:
       replicas: ${VLM_REPLICAS:-0}
+
 
   llm-qwen2_5-7b:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -99,8 +99,24 @@ services:
       replicas: ${LLM_4GPU_REPLICAS:-0}
 
 
-  llm-qwen2_5-code:
+  llm-qwen-QwQ-32B:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
+    container_name: llm-qwen-qwq-32b
+    runtime: nvidia
+    ipc: host
+    volumes:
+      - ${MODEL_PATH:-/home/tzm/tzm/models}:/models
+      - ./deploy_script:/app
+    ports:
+      - "8012:8012"
+    command: zsh -c "zsh app/start_qwen_QwQ_32B.sh"
+    restart: always
+    deploy:
+      replicas: ${QWQ_REPLICAS:-0}
+
+
+  llm-qwen2_5-code:
+    image: christtzm/nv_dev:cuda12.4-vllm-v2.0
     container_name: llm-qwen2_5-code
     runtime: nvidia
     ipc: host
