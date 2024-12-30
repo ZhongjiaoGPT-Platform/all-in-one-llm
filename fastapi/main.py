@@ -25,6 +25,7 @@ code_llm_replicas = int(os.getenv('CODE_LLM_REPLICAS', '0') or '0')
 whisper_replicas = int(os.getenv('ASR_REPLICAS', '0') or '0')
 vlm_replicas = int(os.getenv('VLM_REPLICAS', '0') or '0')
 emb_replicas = int(os.getenv('EMB_REPLICAS', '0') or '0')
+qwq_replicas = int(os.getenv('QWQ_REPLICAS', '0') or '0')
 
 print("################################")
 print("llm_1gpu_replicas", llm_1gpu_replicas)
@@ -35,6 +36,7 @@ print("code_llm_replicas", code_llm_replicas)
 print("whisper_replicas", whisper_replicas)
 print("vlm_replicas", vlm_replicas)
 print("emb_replicas", emb_replicas)
+print("qwq_replicas", qwq_replicas)
 print("################################")
 
 if llm_1gpu_replicas > 0:
@@ -45,6 +47,8 @@ elif llm_4gpu_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-72b-int4:8012"
 elif code_llm_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-code:8012"
+elif qwq_replicas > 0:
+    LLM_URL = "http://llm-qwen-qwq-32b:8012"
 else:
     LLM_URL = "http://localhost:8012"
 
