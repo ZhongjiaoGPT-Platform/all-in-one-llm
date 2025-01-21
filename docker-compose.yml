@@ -19,6 +19,7 @@ services:
       - EMB_REPLICAS=${EMB_REPLICAS}
       - VLM_REPLICAS=${VLM_REPLICAS}
       - QWQ_REPLICAS=${QWQ_REPLICAS}
+      - DeepSeek_R1_REPLICAS=${DeepSeek_R1_REPLICAS}
     ports:
       - 8000:8000
     restart: always
@@ -36,7 +37,7 @@ services:
 
 
   vlm-qwen2-vl-7b:
-    image: christtzm/nv_dev:cuda12.4-vllm-v1.1
+    image: christtzm/nv_dev:cuda12.4-vllm-v2.1
     container_name: vlm-qwen2-vl-7b
     runtime: nvidia
     ipc: host
@@ -77,7 +78,7 @@ services:
       - ./deploy_script:/app
     ports:
       - "8012:8012"
-    command: zsh -c "zsh app/start_qwen2_5_72B_in4_2gpu.sh"
+    command: zsh -c "zsh app/start_qwen2_5_72B_int4_2gpu.sh"
     restart: always
     deploy:
       replicas: ${LLM_2GPU_REPLICAS:-0}
@@ -93,7 +94,7 @@ services:
       - ./deploy_script:/app
     ports:
       - "8012:8012"
-    command: zsh -c "zsh app/start_qwen2_5_72B_in4.sh"
+    command: zsh -c "zsh app/start_qwen2_5_72B_int4.sh"
     restart: always
     deploy:
       replicas: ${LLM_4GPU_REPLICAS:-0}
@@ -114,6 +115,20 @@ services:
     deploy:
       replicas: ${QWQ_REPLICAS:-0}
 
+  deepseek-r1:
+    image: christtzm/nv_dev:cuda12.4-vllm-v2.0
+    container_name: deepseek-r1
+    runtime: nvidia
+    ipc: host
+    volumes:
+      - ${MODEL_PATH:-/home/tzm/tzm/models}:/models
+      - ./deploy_script:/app
+    ports:
+      - "8012:8012"
+    command: zsh -c "${DeepSeek_R1_COMMAND:-zsh app/start_deepseek_r1_qwen_32b.sh}"
+    restart: always
+    deploy:
+      replicas: ${DeepSeek_R1_REPLICAS:-0}
 
   llm-qwen2_5-code:
     image: christtzm/nv_dev:cuda12.4-vllm-v2.0
