@@ -1,21 +1,32 @@
-
 # docker-compose project name
 COMPOSE_PROJECT_NAME=all-in-one-llm
 
 MODEL_PATH=/home/tzm/tzm/models
 
-LLM_1GPU_REPLICAS=0
+LLM_1GPU_REPLICAS=1
 LLM_2GPU_REPLICAS=0
 LLM_4GPU_REPLICAS=0
+
 ALM_REPLICAS=0
 ASR_REPLICAS=0
+
 CODE_LLM_REPLICAS=0
-QWQ_REPLICAS=1
 # CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_34B_awq.sh
 CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_7B.sh
+
+QWQ_REPLICAS=0
+
+DeepSeek_R1_REPLICAS=0
+DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_32b.sh
+# DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_7b.sh
+# DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_1_5b.sh
+
 EMB_REPLICAS=0
+
 VLM_REPLICAS=0
 VLM_COMMAND=zsh app/start_qwen2_vl_7B.sh
+# VLM_COMMAND=zsh app/start_qwen_QvQ_72B_int4.sh
+# VLM_COMMAND=zsh app/start_qwen2_vl_72B_int4.sh
 # VLM_COMMAND=zsh app/start_qwen2_vl_72B_int4.sh
 
 # # to protect the API, you can set a secret key (optional)

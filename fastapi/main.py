@@ -26,6 +26,7 @@ whisper_replicas = int(os.getenv('ASR_REPLICAS', '0') or '0')
 vlm_replicas = int(os.getenv('VLM_REPLICAS', '0') or '0')
 emb_replicas = int(os.getenv('EMB_REPLICAS', '0') or '0')
 qwq_replicas = int(os.getenv('QWQ_REPLICAS', '0') or '0')
+deepseek_r1_replicas = int(os.getenv('DeepSeek_R1_REPLICAS', '0') or '0')
 
 print("################################")
 print("llm_1gpu_replicas", llm_1gpu_replicas)
@@ -37,6 +38,7 @@ print("whisper_replicas", whisper_replicas)
 print("vlm_replicas", vlm_replicas)
 print("emb_replicas", emb_replicas)
 print("qwq_replicas", qwq_replicas)
+print("deepseek_r1_replicas", deepseek_r1_replicas)
 print("################################")
 
 if llm_1gpu_replicas > 0:
@@ -49,6 +51,8 @@ elif code_llm_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-code:8012"
 elif qwq_replicas > 0:
     LLM_URL = "http://llm-qwen-qwq-32b:8012"
+elif deepseek_r1_replicas > 0:
+    LLM_URL = "http://deepseek-r1:8012"
 else:
     LLM_URL = "http://localhost:8012"
 
@@ -121,7 +125,7 @@ def health_check(request: Request, api_key: str = Security(check_api_key)) -> Re
     # Map services to their replica counts and URLs
     services = {
         "LLM": {
-            "replicas": llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas,
+            "replicas": llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas + deepseek_r1_replicas,
             "url": LLM_URL,
             "check_health": True,
         },
@@ -174,7 +178,7 @@ def get_models(
     # Initialize models dynamically based on replicas
     models = []
 
-    if llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas > 0:
+    if llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas + deepseek_r1_replicas > 0:
         llm_model_data = fetch_model_info(f"{LLM_URL}/v1/models", headers, "text-generation", "vllm")
         if llm_model_data:
             models.append(llm_model_data)
