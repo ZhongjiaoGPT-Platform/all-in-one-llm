@@ -178,9 +178,7 @@ def get_models(
     # Initialize models dynamically based on replicas
     models = []
 
-    print(111111111111111111111)
     if llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas + deepseek_r1_replicas > 0:
-        print(222222222222222222222)
         llm_model_data = fetch_model_info(f"{LLM_URL}/v1/models", headers, "text-generation", "vllm")
         if llm_model_data:
             models.append(llm_model_data)
