@@ -51,8 +51,6 @@ elif code_llm_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-code:8012"
 elif qwq_replicas > 0:
     LLM_URL = "http://llm-qwen-qwq-32b:8012"
-elif deepseek_r1_replicas > 0:
-    LLM_URL = "http://deepseek-r1:8012"
 else:
     LLM_URL = "http://localhost:8012"
 
@@ -60,6 +58,8 @@ VLM_URL = "http://vlm-qwen2-vl-7b:8022"
 EMB_URL = "http://embed-gte-qwen2-7b:8112"
 ALM_URL = "http://llm-qwen2-audio-7b:8032"
 ASR_URL = "http://whisper-large-v3:8132"
+REASON_LLM_URL = "http://deepseek-r1:8072"
+
 
 # auth
 auth_scheme = HTTPBearer(scheme_name="API key")
@@ -125,10 +125,11 @@ def health_check(request: Request, api_key: str = Security(check_api_key)) -> Re
     # Map services to their replica counts and URLs
     services = {
         "LLM": {
-            "replicas": llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas + deepseek_r1_replicas,
+            "replicas": llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas,
             "url": LLM_URL,
             "check_health": True,
         },
+        "REASON_LLM": {"replicas": deepseek_r1_replicas, "url": REASON_LLM_URL, "check_health": True},
         "VLM": {"replicas": vlm_replicas, "url": VLM_URL, "check_health": True},
         "EMB": {"replicas": emb_replicas, "url": EMB_URL, "check_health": True},
         "ALM": {"replicas": alm_replicas, "url": ALM_URL, "check_health": True},
@@ -180,6 +181,11 @@ def get_models(
 
     if llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas + deepseek_r1_replicas > 0:
         llm_model_data = fetch_model_info(f"{LLM_URL}/v1/models", headers, "text-generation", "vllm")
+        if llm_model_data:
+            models.append(llm_model_data)
+
+    if deepseek_r1_replicas > 0:
+        llm_model_data = fetch_model_info(f"{REASON_LLM_URL}/v1/models", headers, "text-generation", "vllm")
         if llm_model_data:
             models.append(llm_model_data)
 

@@ -8,7 +8,7 @@ LLM_2GPU_REPLICAS=0
 LLM_4GPU_REPLICAS=0
 
 ALM_REPLICAS=0
-ASR_REPLICAS=0
+ASR_REPLICAS=1
 
 CODE_LLM_REPLICAS=0
 # CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_34B_awq.sh
@@ -16,9 +16,10 @@ CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_7B.sh
 
 QWQ_REPLICAS=0
 
-DeepSeek_R1_REPLICAS=0
-DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_32b.sh
-# DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_7b.sh
+DeepSeek_R1_REPLICAS=1
+# DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_32b.sh
+DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_7b.sh
+DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_14b.sh
 # DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_1_5b.sh
 
 EMB_REPLICAS=0
