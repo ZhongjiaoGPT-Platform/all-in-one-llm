@@ -116,7 +116,7 @@ services:
       replicas: ${QWQ_REPLICAS:-0}
 
   deepseek-r1:
-    image: christtzm/nv_dev:cuda12.4-vllm-v2.0
+    image: christtzm/nv_dev:cuda12.4-vllm-v3.0-r1
     container_name: deepseek-r1
     runtime: nvidia
     ipc: host
@@ -124,7 +124,7 @@ services:
       - ${MODEL_PATH:-/home/tzm/tzm/models}:/models
       - ./deploy_script:/app
     ports:
-      - "8012:8012"
+      - "8072:8072"
     command: zsh -c "${DeepSeek_R1_COMMAND:-zsh app/start_deepseek_r1_qwen_32b.sh}"
     restart: always
     deploy:
