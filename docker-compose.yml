@@ -13,6 +13,7 @@ services:
       - LLM_1GPU_REPLICAS=${LLM_1GPU_REPLICAS}
       - LLM_2GPU_REPLICAS=${LLM_2GPU_REPLICAS}
       - LLM_4GPU_REPLICAS=${LLM_4GPU_REPLICAS}
+      - LLM_8GPU_REPLICAS=${LLM_8GPU_REPLICAS}
       - ALM_REPLICAS=${ALM_REPLICAS}
       - ASR_REPLICAS=${ASR_REPLICAS}
       - CODE_LLM_REPLICAS=${CODE_LLM_REPLICAS}
@@ -20,6 +21,10 @@ services:
       - VLM_REPLICAS=${VLM_REPLICAS}
       - QWQ_REPLICAS=${QWQ_REPLICAS}
       - DeepSeek_R1_REPLICAS=${DeepSeek_R1_REPLICAS}
+      - REMOTE_EMB=${REMOTE_EMB}
+      - REMOTE_EMB_BASE=${REMOTE_EMB_BASE}
+      - REMOTE_LLM=${REMOTE_LLM}
+      - REMOTE_LLM_BASE=${REMOTE_LLM_BASE}
     ports:
       - 8000:8000
     restart: always
@@ -99,6 +104,20 @@ services:
     deploy:
       replicas: ${LLM_4GPU_REPLICAS:-0}
 
+  llm-qwen2_5-72b:
+    image: christtzm/nv_dev:cuda12.4-vllm-v1.0
+    container_name: llm-qwen2_5-72b
+    runtime: nvidia
+    ipc: host
+    volumes:
+      - ${MODEL_PATH:-/home/tzm/tzm/models}:/models
+      - ./deploy_script:/app
+    ports:
+      - "8012:8012"
+    command: zsh -c "zsh app/start_qwen2_5_72B.sh"
+    restart: always
+    deploy:
+      replicas: ${LLM_8GPU_REPLICAS:-0}
 
   llm-qwen-QwQ-32B:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
