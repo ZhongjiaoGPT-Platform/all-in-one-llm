@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.9"
 
 services:
 
@@ -28,6 +28,7 @@ services:
     ports:
       - 8000:8000
     restart: always
+    profiles: ["host"]
 
 
   nginx:
@@ -39,6 +40,7 @@ services:
     ports:
       - 80:80
     restart: always
+    profiles: ["host"]
 
 
   vlm-qwen2-vl-7b:
@@ -55,6 +57,7 @@ services:
     restart: always
     deploy:
       replicas: ${VLM_REPLICAS:-0}
+    profiles: ["host"]
 
 
   llm-qwen2_5-7b:
@@ -71,7 +74,7 @@ services:
     restart: always
     deploy:
       replicas: ${LLM_1GPU_REPLICAS:-0}
-
+    profiles: ["host"]
 
   llm-qwen2_5-72b-int4-2gpu:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -87,7 +90,7 @@ services:
     restart: always
     deploy:
       replicas: ${LLM_2GPU_REPLICAS:-0}
-
+    profiles: ["host"]
 
   llm-qwen2_5-72b-int4:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -103,6 +106,8 @@ services:
     restart: always
     deploy:
       replicas: ${LLM_4GPU_REPLICAS:-0}
+    profiles: ["host"]
+
 
   llm-qwen2_5-72b:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -118,6 +123,8 @@ services:
     restart: always
     deploy:
       replicas: ${LLM_8GPU_REPLICAS:-0}
+    profiles: ["host"]
+
 
   llm-qwen-QwQ-32B:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -133,6 +140,7 @@ services:
     restart: always
     deploy:
       replicas: ${QWQ_REPLICAS:-0}
+    profiles: ["host"]
 
   deepseek-r1:
     image: christtzm/nv_dev:cuda12.4-vllm-v3.0-r1
@@ -148,6 +156,7 @@ services:
     restart: always
     deploy:
       replicas: ${DeepSeek_R1_REPLICAS:-0}
+    profiles: ["host"]
 
   llm-qwen2_5-code:
     image: christtzm/nv_dev:cuda12.4-vllm-v2.0
@@ -163,6 +172,7 @@ services:
     restart: always
     deploy:
       replicas: ${CODE_LLM_REPLICAS:-0}
+    profiles: ["host"]
 
 
   llm-qwen2-audio-7b:
@@ -179,6 +189,7 @@ services:
     restart: always
     deploy:
       replicas: ${ALM_REPLICAS:-0}
+    profiles: ["host"]
 
 
   whisper-large-v3:
@@ -195,6 +206,7 @@ services:
     restart: always
     deploy:
       replicas: ${ASR_REPLICAS:-0}
+    profiles: ["host"]
 
 
   embed-gte-qwen2-7b:
@@ -211,6 +223,7 @@ services:
     restart: always
     deploy:
       replicas: ${EMB_REPLICAS:-0}
+    profiles: ["host"]
 
 
   ray-head:
@@ -242,6 +255,7 @@ services:
     restart: always
     deploy:
       replicas: ${RAY_HEAD:-0}
+    profiles: ["head"]
 
 
   ray-worker:
@@ -261,4 +275,5 @@ services:
     restart: always
     deploy:
       replicas: ${RAY_WORKER:-0}
+    profiles: ["worker"]
 
