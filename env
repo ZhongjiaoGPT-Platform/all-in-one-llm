@@ -1,14 +1,15 @@
 # docker-compose project name
 COMPOSE_PROJECT_NAME=all-in-one-llm
 
-MODEL_PATH=/home/tzm/tzm/models
+MODEL_PATH=/home/tzm-down/tzm/models
 
-LLM_1GPU_REPLICAS=1
+LLM_1GPU_REPLICAS=0
 LLM_2GPU_REPLICAS=0
 LLM_4GPU_REPLICAS=0
+LLM_8GPU_REPLICAS=0
 
 ALM_REPLICAS=0
-ASR_REPLICAS=1
+ASR_REPLICAS=0
 
 CODE_LLM_REPLICAS=0
 # CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_34B_awq.sh
@@ -16,7 +17,7 @@ CODE_LLM_COMMAND=zsh app/start_qwen2_5_code_7B.sh
 
 QWQ_REPLICAS=0
 
-DeepSeek_R1_REPLICAS=1
+DeepSeek_R1_REPLICAS=0
 # DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_32b.sh
 DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_7b.sh
 DeepSeek_R1_COMMAND=zsh app/start_deepseek_r1_qwen_14b.sh
@@ -32,4 +33,26 @@ VLM_COMMAND=zsh app/start_qwen2_vl_7B.sh
 
 # # to protect the API, you can set a secret key (optional)
 # API_KEY=mysecretkey # comment this line to disable the API key (empty value does not work)
+
+REMOTE_EMB=1
+REMOTE_EMB_BASE="http://10.23.56.12:8112"
+
+REMOTE_LLM=1
+REMOTE_LLM_BASE="http://10.23.56.30:8012"
+# REMOTE_LLM_BASE="http://10.23.56.31:8092"
+
+
+RAY_HEAD=1
+RAY_HEAD_IP="192.168.66.1"
+HEAD_GLOO_SOCKET_IFNAME="ens11f0"
+HEAD_TP_SOCKET_IFNAME="ens11f0"
+HEAD_NCCL_SOCKET_IFNAME="ens11f0"
+
+RAY_WORKER=0
+RAY_WORKER_IP="192.168.66.2"
+WORKER_GLOO_SOCKET_IFNAME="ens110f0"
+WORKER_TP_SOCKET_IFNAME="ens110f0"
+WORKER_NCCL_SOCKET_IFNAME="ens110f0"
+
+
 

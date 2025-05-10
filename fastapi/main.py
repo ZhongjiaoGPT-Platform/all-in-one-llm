@@ -20,6 +20,7 @@ app = FastAPI(title="All In One LLM", version="1.0.1")
 llm_1gpu_replicas = int(os.getenv('LLM_1GPU_REPLICAS', '0') or '0')
 llm_2gpu_replicas = int(os.getenv('LLM_2GPU_REPLICAS', '0') or '0')
 llm_4gpu_replicas = int(os.getenv('LLM_4GPU_REPLICAS', '0') or '0')
+llm_8gpu_replicas = int(os.getenv('LLM_8GPU_REPLICAS', '0') or '0')
 alm_replicas = int(os.getenv('ALM_REPLICAS', '0') or '0')
 code_llm_replicas = int(os.getenv('CODE_LLM_REPLICAS', '0') or '0')
 whisper_replicas = int(os.getenv('ASR_REPLICAS', '0') or '0')
@@ -28,10 +29,17 @@ emb_replicas = int(os.getenv('EMB_REPLICAS', '0') or '0')
 qwq_replicas = int(os.getenv('QWQ_REPLICAS', '0') or '0')
 deepseek_r1_replicas = int(os.getenv('DeepSeek_R1_REPLICAS', '0') or '0')
 
+remote_emb = int(os.getenv('REMOTE_EMB', '0') or '0')
+remote_emb_base = os.getenv('REMOTE_EMB_BASE', '0')
+
+remote_llm = int(os.getenv('REMOTE_LLM', '0') or '0')
+remote_llm_base = os.getenv('REMOTE_LLM_BASE', '0')
+
 print("################################")
 print("llm_1gpu_replicas", llm_1gpu_replicas)
 print("llm_2gpu_replicas", llm_2gpu_replicas)
 print("llm_4gpu_replicas", llm_4gpu_replicas)
+print("llm_8gpu_replicas", llm_8gpu_replicas)
 print("alm_replicas", alm_replicas)
 print("code_llm_replicas", code_llm_replicas)
 print("whisper_replicas", whisper_replicas)
@@ -39,6 +47,11 @@ print("vlm_replicas", vlm_replicas)
 print("emb_replicas", emb_replicas)
 print("qwq_replicas", qwq_replicas)
 print("deepseek_r1_replicas", deepseek_r1_replicas)
+
+print("remote_emb", remote_emb)
+print("remote_emb_base", remote_emb_base)
+print("remote_llm", remote_llm)
+print("remote_llm_base", remote_llm_base)
 print("################################")
 
 if llm_1gpu_replicas > 0:
@@ -47,6 +60,8 @@ elif llm_2gpu_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-72b-int4-2gpu:8012"
 elif llm_4gpu_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-72b-int4:8012"
+elif llm_8gpu_replicas > 0:
+    LLM_URL = "http://llm-qwen2_5-72b:8012"
 elif code_llm_replicas > 0:
     LLM_URL = "http://llm-qwen2_5-code:8012"
 elif qwq_replicas > 0:
@@ -54,12 +69,19 @@ elif qwq_replicas > 0:
 else:
     LLM_URL = "http://localhost:8012"
 
+if remote_llm > 0:
+    LLM_URL = remote_llm_base
+    llm_8gpu_replicas = 1
+
 VLM_URL = "http://vlm-qwen2-vl-7b:8022"
 EMB_URL = "http://embed-gte-qwen2-7b:8112"
 ALM_URL = "http://llm-qwen2-audio-7b:8032"
 ASR_URL = "http://whisper-large-v3:8132"
 REASON_LLM_URL = "http://deepseek-r1:8072"
 
+if remote_emb > 0:
+    EMB_URL = remote_emb_base
+    emb_replicas = 1
 
 # auth
 auth_scheme = HTTPBearer(scheme_name="API key")
@@ -125,7 +147,7 @@ def health_check(request: Request, api_key: str = Security(check_api_key)) -> Re
     # Map services to their replica counts and URLs
     services = {
         "LLM": {
-            "replicas": llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas,
+            "replicas": llm_1gpu_replicas + llm_2gpu_replicas +  llm_4gpu_replicas + llm_8gpu_replicas + code_llm_replicas + qwq_replicas,
             "url": LLM_URL,
             "check_health": True,
         },
@@ -179,7 +201,7 @@ def get_models(
     # Initialize models dynamically based on replicas
     models = []
 
-    if llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + code_llm_replicas + qwq_replicas + deepseek_r1_replicas > 0:
+    if llm_1gpu_replicas + llm_2gpu_replicas + llm_4gpu_replicas + llm_8gpu_replicas + code_llm_replicas + qwq_replicas + deepseek_r1_replicas > 0:
         llm_model_data = fetch_model_info(f"{LLM_URL}/v1/models", headers, "text-generation", "vllm")
         if llm_model_data:
             models.append(llm_model_data)

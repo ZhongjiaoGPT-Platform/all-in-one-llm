@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.9"
 
 services:
 
@@ -13,6 +13,7 @@ services:
       - LLM_1GPU_REPLICAS=${LLM_1GPU_REPLICAS}
       - LLM_2GPU_REPLICAS=${LLM_2GPU_REPLICAS}
       - LLM_4GPU_REPLICAS=${LLM_4GPU_REPLICAS}
+      - LLM_8GPU_REPLICAS=${LLM_8GPU_REPLICAS}
       - ALM_REPLICAS=${ALM_REPLICAS}
       - ASR_REPLICAS=${ASR_REPLICAS}
       - CODE_LLM_REPLICAS=${CODE_LLM_REPLICAS}
@@ -20,9 +21,14 @@ services:
       - VLM_REPLICAS=${VLM_REPLICAS}
       - QWQ_REPLICAS=${QWQ_REPLICAS}
       - DeepSeek_R1_REPLICAS=${DeepSeek_R1_REPLICAS}
+      - REMOTE_EMB=${REMOTE_EMB}
+      - REMOTE_EMB_BASE=${REMOTE_EMB_BASE}
+      - REMOTE_LLM=${REMOTE_LLM}
+      - REMOTE_LLM_BASE=${REMOTE_LLM_BASE}
     ports:
       - 8000:8000
     restart: always
+    profiles: ["host"]
 
 
   nginx:
@@ -34,6 +40,7 @@ services:
     ports:
       - 80:80
     restart: always
+    profiles: ["host"]
 
 
   vlm-qwen2-vl-7b:
@@ -50,6 +57,7 @@ services:
     restart: always
     deploy:
       replicas: ${VLM_REPLICAS:-0}
+    profiles: ["host"]
 
 
   llm-qwen2_5-7b:
@@ -66,7 +74,7 @@ services:
     restart: always
     deploy:
       replicas: ${LLM_1GPU_REPLICAS:-0}
-
+    profiles: ["host"]
 
   llm-qwen2_5-72b-int4-2gpu:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -82,7 +90,7 @@ services:
     restart: always
     deploy:
       replicas: ${LLM_2GPU_REPLICAS:-0}
-
+    profiles: ["host"]
 
   llm-qwen2_5-72b-int4:
     image: christtzm/nv_dev:cuda12.4-vllm-v1.0
@@ -98,6 +106,24 @@ services:
     restart: always
     deploy:
       replicas: ${LLM_4GPU_REPLICAS:-0}
+    profiles: ["host"]
+
+
+  llm-qwen2_5-72b:
+    image: christtzm/nv_dev:cuda12.4-vllm-v1.0
+    container_name: llm-qwen2_5-72b
+    runtime: nvidia
+    ipc: host
+    volumes:
+      - ${MODEL_PATH:-/home/tzm/tzm/models}:/models
+      - ./deploy_script:/app
+    ports:
+      - "8012:8012"
+    command: zsh -c "zsh app/start_qwen2_5_72B.sh"
+    restart: always
+    deploy:
+      replicas: ${LLM_8GPU_REPLICAS:-0}
+    profiles: ["host"]
 
 
   llm-qwen-QwQ-32B:
@@ -114,6 +140,7 @@ services:
     restart: always
     deploy:
       replicas: ${QWQ_REPLICAS:-0}
+    profiles: ["host"]
 
   deepseek-r1:
     image: christtzm/nv_dev:cuda12.4-vllm-v3.0-r1
@@ -129,6 +156,7 @@ services:
     restart: always
     deploy:
       replicas: ${DeepSeek_R1_REPLICAS:-0}
+    profiles: ["host"]
 
   llm-qwen2_5-code:
     image: christtzm/nv_dev:cuda12.4-vllm-v2.0
@@ -144,6 +172,7 @@ services:
     restart: always
     deploy:
       replicas: ${CODE_LLM_REPLICAS:-0}
+    profiles: ["host"]
 
 
   llm-qwen2-audio-7b:
@@ -160,6 +189,7 @@ services:
     restart: always
     deploy:
       replicas: ${ALM_REPLICAS:-0}
+    profiles: ["host"]
 
 
   whisper-large-v3:
@@ -176,6 +206,7 @@ services:
     restart: always
     deploy:
       replicas: ${ASR_REPLICAS:-0}
+    profiles: ["host"]
 
 
   embed-gte-qwen2-7b:
@@ -192,4 +223,57 @@ services:
     restart: always
     deploy:
       replicas: ${EMB_REPLICAS:-0}
+    profiles: ["host"]
+
+
+  ray-head:
+    image: qwen3-deploy-with_parser:latest
+    container_name: ray-head
+    network_mode: host
+    runtime: nvidia
+    shm_size: 10.24g
+    environment:
+      - RAY_HEAD_IP=${RAY_HEAD_IP}
+      - VLLM_HOST_IP=${RAY_HEAD_IP}
+      - GLOO_SOCKET_IFNAME=${HEAD_GLOO_SOCKET_IFNAME}
+      - TP_SOCKET_IFNAME=${HEAD_TP_SOCKET_IFNAME}
+      - NCCL_SOCKET_IFNAME=${HEAD_NCCL_SOCKET_IFNAME}
+    entrypoint:
+      - zsh
+      - -c
+      - |
+        source ~/.zshrc
+        ray start --head --port=6379 --node-ip-address=$RAY_HEAD_IP --block &
+        exec "$@"
+    command:
+      - zsh
+      - -c
+      - /app/start_qwen3_235B_FP8.sh
+    volumes:
+      - ${MODEL_PATH:-/data/tzm_data/models}:/root/.cache/huggingface
+      - ./deploy_script:/app
+    restart: always
+    deploy:
+      replicas: ${RAY_HEAD:-0}
+    profiles: ["head"]
+
+
+  ray-worker:
+    image: qwen3-deploy-with_parser:latest
+    container_name: ray-worker
+    network_mode: host
+    runtime: nvidia
+    shm_size: 10.24g
+    entrypoint: ["zsh", "-c", "source ~/.zshrc && ray start --block --address=${RAY_HEAD_IP}:6379"]
+    volumes:
+      - ${MODEL_PATH:-/data/tzm_data/models}:/root/.cache/huggingface
+    environment:
+      - VLLM_HOST_IP=${RAY_WORKER_IP}
+      - GLOO_SOCKET_IFNAME=${WORKER_GLOO_SOCKET_IFNAME}
+      - TP_SOCKET_IFNAME=${WORKER_TP_SOCKET_IFNAME}
+      - NCCL_SOCKET_IFNAME=${WORKER_NCCL_SOCKET_IFNAME}
+    restart: always
+    deploy:
+      replicas: ${RAY_WORKER:-0}
+    profiles: ["worker"]
 
